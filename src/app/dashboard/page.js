@@ -72,7 +72,16 @@ export default function DashboardPage() {
   return (
     <div className="space-y-8 pb-10">
       {/* === ROW 1: STAT CARDS === */}
-      <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-4">
+      <div className="grid grid-cols-1 gap-6 sm:grid-cols-1 lg:grid-cols-2 xl:grid-cols-3">
+        {/* --- KARTU BARU: SISA MODAL --- */}
+        <StatCard
+          title="Sisa Modal Investor"
+          value={formatRupiah(summary.investor_fund)}
+          icon={Package} // Bisa ganti icon Wallet jika mau
+          color="purple"
+          trend="neutral"
+          trendValue="Cash"
+        />
         <StatCard
           title="Total Pendapatan"
           value={formatRupiah(summary.total_revenue)}
@@ -150,34 +159,40 @@ export default function DashboardPage() {
       <div className="rounded-3xl bg-slate-900 p-8 shadow-xl relative overflow-hidden text-white">
         <div className="absolute top-0 right-0 -mt-10 -mr-10 h-64 w-64 rounded-full bg-indigo-500 opacity-20 blur-3xl"></div>
         <div className="absolute bottom-0 left-0 -mb-10 -ml-10 h-64 w-64 rounded-full bg-blue-500 opacity-20 blur-3xl"></div>
-
         <div className="relative z-10 flex flex-col md:flex-row justify-between items-center gap-8">
-          <div className="text-center md:text-left">
+          {/* Total Profit Section */}
+          <div className="text-center md:text-left w-full md:w-auto">
             <p className="text-slate-400 text-sm font-medium mb-2 uppercase tracking-widest">
               Total Keuntungan Bersih
             </p>
+
             <div className="flex items-center gap-4 justify-center md:justify-start">
               <h2 className="text-5xl font-bold tracking-tight text-white">
                 {formatRupiah(summary.total_profit)}
               </h2>
+
               <span className="px-3 py-1 rounded-full bg-emerald-500/20 text-emerald-300 text-xs font-bold border border-emerald-500/30">
                 +Net Profit
               </span>
             </div>
           </div>
 
-          <div className="flex gap-4 w-full md:w-auto">
-            <div className="flex-1 bg-white/10 backdrop-blur-sm rounded-2xl p-5 border border-white/10 min-w-[160px]">
+          {/* Cards Section */}
+          <div className="grid grid-cols-2 md:flex gap-4 w-full md:w-auto">
+            {/* Investor Card */}
+            <div className="bg-white/10 backdrop-blur-sm rounded-2xl p-5 border border-white/10 min-w-[150px] flex-1">
               <p className="text-indigo-300 text-xs font-bold uppercase mb-1">
-                Superadmin ({summary.percent_superadmin}%)
+                Investor ({summary.percent_superadmin}%)
               </p>
               <p className="text-2xl font-bold text-white">
                 {formatRupiah(summary.share_superadmin)}
               </p>
             </div>
-            <div className="flex-1 bg-white/10 backdrop-blur-sm rounded-2xl p-5 border border-white/10 min-w-[160px]">
+
+            {/* Partner Card */}
+            <div className="bg-white/10 backdrop-blur-sm rounded-2xl p-5 border border-white/10 min-w-[150px] flex-1">
               <p className="text-amber-300 text-xs font-bold uppercase mb-1">
-                Partner ({summary.percent_partner}%)
+                Pelaksana ({summary.percent_partner}%)
               </p>
               <p className="text-2xl font-bold text-white">
                 {formatRupiah(summary.share_partner)}

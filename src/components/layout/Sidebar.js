@@ -2,6 +2,8 @@
 
 import { usePathname, useRouter } from "next/navigation";
 import Link from "next/link";
+import Image from "next/image";
+import { useState, useEffect } from "react";
 import {
   LayoutDashboard,
   Smartphone,
@@ -10,9 +12,9 @@ import {
   LogOut,
   ShoppingCart,
   History,
-  Box,
   X,
-  Wallet, // Icon untuk Keuangan
+  Wallet,
+  Users, // Icon untuk Team
 } from "lucide-react";
 import { supabase } from "@/lib/supabaseClient";
 
@@ -20,14 +22,54 @@ export default function Sidebar({ isOpen, setIsOpen }) {
   const pathname = usePathname();
   const router = useRouter();
 
-  const navigation = [
+  // State untuk menyimpan profil user agar kita tahu role-nya
+  const [userProfile, setUserProfile] = useState(null);
+
+  // Fetch Profil saat Sidebar dimuat untuk cek Role
+  useEffect(() => {
+    const fetchProfile = async () => {
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
+      if (user) {
+        const { data } = await supabase
+          .from("profiles")
+          .select("*")
+          .eq("id", user.id)
+          .single();
+
+        setUserProfile(data);
+      }
+    };
+    fetchProfile();
+  }, []);
+
+  // Definisi Menu Dasar
+  const baseNavigation = [
     { name: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
     { name: "Manage Phone", href: "/dashboard/phone", icon: Smartphone },
     { name: "Transaksi", href: "/dashboard/transaction", icon: ShoppingCart },
-    { name: "Keuangan", href: "/dashboard/finance", icon: Wallet }, // Menu Baru
+    { name: "Keuangan", href: "/dashboard/finance", icon: Wallet },
     { name: "Laporan", href: "/dashboard/analytics", icon: BarChart3 },
     { name: "Log Aktivitas", href: "/dashboard/logs", icon: History },
+  ];
+
+  // Menu Tambahan Khusus Superadmin
+  const adminMenu = [
+    { name: "Kelola Tim", href: "/dashboard/team", icon: Users },
+  ];
+
+  // Menu Akhir (Pengaturan selalu di bawah)
+  const settingsMenu = [
     { name: "Pengaturan", href: "/dashboard/settings", icon: Settings },
+  ];
+
+  // Gabungkan Menu berdasarkan Role
+  // Jika role belum load (null), tampilkan menu dasar dulu
+  const navigation = [
+    ...baseNavigation,
+    ...(userProfile?.role === "superadmin" ? adminMenu : []),
+    ...settingsMenu,
   ];
 
   const handleLogout = async () => {
@@ -37,49 +79,44 @@ export default function Sidebar({ isOpen, setIsOpen }) {
 
   return (
     <>
-      {/* LOGIKA RESPONSIF:
-        - Mobile: Default hidden (-translate-x-full), muncul jika isOpen=true.
-        - Desktop (lg): Selalu muncul (translate-x-0).
-      */}
+      {/* SIDEBAR CONTAINER */}
       <aside
         className={`
-        fixed inset-y-0 left-0 z-50 w-72 bg-slate-900 text-slate-300 shadow-xl flex flex-col transition-transform duration-300 ease-in-out
+        fixed inset-y-0 left-0 z-50 w-72 bg-white border-r border-gray-200 shadow-sm flex flex-col transition-transform duration-300 ease-in-out
         ${isOpen ? "translate-x-0" : "-translate-x-full"} 
         lg:translate-x-0 
       `}
       >
-        {/* Logo Area */}
-        <div className="flex h-20 items-center justify-between px-8 border-b border-slate-800">
-          <div className="flex items-center gap-3">
-            <div className="bg-indigo-600 p-2 rounded-xl text-white shadow-lg shadow-indigo-900/50">
-              <Box size={24} strokeWidth={3} />
-            </div>
-            <div>
-              <h1 className="text-xl font-extrabold text-white tracking-tight">
-                Nuka<span className="text-indigo-500">Phone</span>
-              </h1>
-              <p className="text-[10px] text-slate-500 uppercase tracking-widest font-semibold">
-                Management
-              </p>
-            </div>
+        {/* LOGO AREA */}
+        <div className="flex h-24 items-center justify-between px-8">
+          {/* Logo Image */}
+          <div className="relative h-12 w-48">
+            <Image
+              src="/image/ataraxia-logo.png"
+              alt="Ataraxia Logo"
+              fill
+              className="object-contain object-left"
+              priority
+            />
           </div>
+
           {/* Tombol Close (Hanya Mobile) */}
           <button
             onClick={() => setIsOpen(false)}
-            className="lg:hidden p-2 text-slate-400 hover:text-red-500 transition-colors"
+            className="lg:hidden p-2 text-gray-400 hover:text-red-500 transition-colors"
           >
             <X size={24} />
           </button>
         </div>
 
-        {/* Navigation Links */}
-        <nav className="flex-1 px-4 py-8 space-y-2 overflow-y-auto">
-          <p className="px-4 text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">
-            Main Menu
+        {/* NAVIGATION LINKS */}
+        <nav className="flex-1 px-6 py-4 space-y-2 overflow-y-auto">
+          <p className="px-2 text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">
+            Menu
           </p>
 
           {navigation.map((item) => {
-            // Cek aktif: exact match ATAU startsWith (untuk sub-halaman seperti /phone/add)
+            // Cek aktif
             const isActive =
               pathname === item.href ||
               (item.href !== "/dashboard" && pathname.startsWith(item.href));
@@ -88,22 +125,22 @@ export default function Sidebar({ isOpen, setIsOpen }) {
               <Link
                 key={item.name}
                 href={item.href}
-                onClick={() => setIsOpen(false)} // Tutup sidebar saat link diklik (Mobile only)
+                onClick={() => setIsOpen(false)}
                 className={`
-                  flex items-center gap-3 px-4 py-3 text-sm font-medium rounded-xl transition-all duration-200 group
+                  flex items-center gap-4 px-4 py-3.5 text-sm font-bold rounded-2xl transition-all duration-200 group
                   ${
                     isActive
-                      ? "bg-indigo-600 text-white shadow-lg shadow-indigo-900/50"
-                      : "text-slate-400 hover:bg-slate-800 hover:text-white"
+                      ? "bg-blue-600 text-white shadow-md shadow-blue-200"
+                      : "text-gray-500 hover:bg-gray-50 hover:text-blue-600"
                   }
                 `}
               >
                 <item.icon
-                  size={20}
+                  size={22}
                   className={`transition-colors ${
                     isActive
                       ? "text-white"
-                      : "text-slate-400 group-hover:text-white"
+                      : "text-gray-400 group-hover:text-blue-600"
                   }`}
                 />
                 {item.name}
@@ -112,21 +149,23 @@ export default function Sidebar({ isOpen, setIsOpen }) {
           })}
         </nav>
 
-        {/* User Profile (Bottom) */}
-        <div className="p-4 border-t border-slate-800">
-          <div className="flex items-center gap-3 p-3 rounded-xl bg-slate-800/50 border border-slate-700/50">
-            <div className="h-10 w-10 rounded-full bg-gradient-to-tr from-indigo-500 to-purple-500 flex items-center justify-center text-white font-bold text-sm shadow-md flex-shrink-0">
-              AD
+        {/* USER PROFILE (BOTTOM) */}
+        <div className="p-6 border-t border-gray-50">
+          <div className="bg-gray-50 rounded-2xl p-4 flex items-center gap-4 border border-gray-100">
+            <div className="h-10 w-10 rounded-full bg-blue-100 flex-shrink-0 overflow-hidden flex items-center justify-center text-blue-600 font-bold">
+              {userProfile?.email?.charAt(0).toUpperCase() || "U"}
             </div>
             <div className="flex-1 min-w-0">
-              <p className="text-sm font-semibold text-white truncate">
-                Administrator
+              <p className="text-sm font-bold text-gray-900 truncate">
+                {userProfile?.full_name || "Loading..."}
               </p>
-              <p className="text-xs text-slate-500 truncate">Super Admin</p>
+              <p className="text-xs text-gray-500 truncate capitalize flex items-center gap-1">
+                {userProfile?.role || "..."}
+              </p>
             </div>
             <button
               onClick={handleLogout}
-              className="p-2 text-slate-400 hover:text-red-400 hover:bg-red-500/10 rounded-lg transition-colors"
+              className="p-2 text-gray-400 hover:text-red-500 rounded-lg transition-colors"
               title="Logout"
             >
               <LogOut size={18} />

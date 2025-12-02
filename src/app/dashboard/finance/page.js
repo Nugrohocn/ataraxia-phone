@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { supabase } from "@/lib/supabaseClient";
-import { Plus, ArrowUpCircle, ArrowDownCircle, Wallet } from "lucide-react";
+import { Plus, ArrowUpCircle, ArrowDownCircle } from "lucide-react";
 import { toast } from "sonner";
 
 export default function FinancePage() {
@@ -11,9 +11,8 @@ export default function FinancePage() {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [submitting, setSubmitting] = useState(false);
 
-  // State Form
   const [formData, setFormData] = useState({
-    type: "in", // 'in' atau 'out'
+    type: "in",
     category: "modal_investor",
     amount: "",
     description: "",
@@ -31,6 +30,7 @@ export default function FinancePage() {
       setTransactions(data);
     } catch (error) {
       console.error(error);
+      toast.error("Gagal memuat data keuangan");
     } finally {
       setLoading(false);
     }
@@ -43,6 +43,10 @@ export default function FinancePage() {
   const handleSubmit = async (e) => {
     e.preventDefault();
     setSubmitting(true);
+
+    // Tampilkan Loading Toast
+    const toastId = toast.loading("Menyimpan transaksi...");
+
     try {
       const {
         data: { user },
@@ -57,7 +61,9 @@ export default function FinancePage() {
 
       if (error) throw error;
 
-      toast.success("Transaksi berhasil dicatat!");
+      // Update Toast jadi Sukses
+      toast.success("Transaksi berhasil dicatat!", { id: toastId });
+
       fetchTransactions();
       setIsModalOpen(false);
       setFormData({
@@ -65,9 +71,10 @@ export default function FinancePage() {
         category: "modal_investor",
         amount: "",
         description: "",
-      }); // Reset
+      });
     } catch (error) {
-      toast.error("Gagal: " + error.message);
+      // Update Toast jadi Gagal
+      toast.error("Gagal: " + error.message, { id: toastId });
     } finally {
       setSubmitting(false);
     }
@@ -81,82 +88,89 @@ export default function FinancePage() {
     }).format(num);
 
   return (
-    <div className="space-y-8 pb-10">
-      <div className="flex justify-between items-center">
+    <div className="space-y-8 pb-10 w-full">
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">Keuangan & Kas</h1>
+          <h1 className="text-2xl font-bold text-gray-900">Keuangan</h1>
           <p className="text-sm text-gray-500">
             Catat modal masuk dan pengeluaran operasional toko.
           </p>
         </div>
         <button
           onClick={() => setIsModalOpen(true)}
-          className="flex items-center gap-2 bg-gray-900 text-white px-5 py-2.5 rounded-2xl hover:bg-black transition-all shadow-lg font-bold text-sm"
+          className="flex items-center gap-2 bg-gray-900 text-white px-5 py-2.5 rounded-2xl hover:bg-black transition-all shadow-lg font-bold text-sm w-full sm:w-auto justify-center"
         >
           <Plus size={18} /> Catat Transaksi
         </button>
       </div>
 
-      {/* Tabel Transaksi */}
-      <div className="bg-white rounded-3xl border border-gray-100 shadow-sm overflow-hidden">
-        <table className="w-full text-left text-sm">
-          <thead className="bg-gray-50/50 border-b border-gray-100 text-gray-400 font-bold uppercase text-xs">
-            <tr>
-              <th className="px-6 py-4">Tanggal</th>
-              <th className="px-6 py-4">Kategori</th>
-              <th className="px-6 py-4">Keterangan</th>
-              <th className="px-6 py-4 text-right">Jumlah</th>
-            </tr>
-          </thead>
-          <tbody className="divide-y divide-gray-50">
-            {transactions.map((item) => (
-              <tr
-                key={item.id}
-                className="hover:bg-blue-50/30 transition-colors"
-              >
-                <td className="px-6 py-4 text-gray-500">
-                  {new Date(item.transaction_date).toLocaleDateString("id-ID")}
-                </td>
-                <td className="px-6 py-4">
-                  <span
-                    className={`px-3 py-1 rounded-full text-xs font-bold uppercase ${
-                      item.category === "modal_investor"
-                        ? "bg-purple-100 text-purple-700"
-                        : item.category === "operasional_toko"
-                        ? "bg-orange-100 text-orange-700"
-                        : "bg-gray-100 text-gray-600"
+      {/* Tabel Transaksi Container */}
+      <div className="bg-white rounded-3xl border border-gray-100 shadow-sm overflow-hidden w-full">
+        <div className="overflow-x-auto">
+          <table className="w-full text-left text-sm whitespace-nowrap">
+            <thead className="bg-gray-50/50 border-b border-gray-100 text-gray-400 font-bold uppercase text-xs">
+              <tr>
+                <th className="px-6 py-4">Tanggal</th>
+                <th className="px-6 py-4">Kategori</th>
+                <th className="px-6 py-4">Keterangan</th>
+                <th className="px-6 py-4 text-right">Jumlah</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-gray-50">
+              {transactions.map((item) => (
+                <tr
+                  key={item.id}
+                  className="hover:bg-blue-50/30 transition-colors"
+                >
+                  <td className="px-6 py-4 text-gray-500">
+                    {new Date(item.transaction_date).toLocaleDateString(
+                      "id-ID"
+                    )}
+                  </td>
+                  <td className="px-6 py-4">
+                    <span
+                      className={`px-3 py-1 rounded-full text-xs font-bold uppercase ${
+                        item.category === "modal_investor"
+                          ? "bg-purple-100 text-purple-700"
+                          : item.category === "operasional_toko"
+                          ? "bg-orange-100 text-orange-700"
+                          : "bg-gray-100 text-gray-600"
+                      }`}
+                    >
+                      {item.category.replace("_", " ")}
+                    </span>
+                  </td>
+                  <td
+                    className="px-6 py-4 font-medium text-gray-900 max-w-xs truncate"
+                    title={item.description}
+                  >
+                    {item.description}
+                  </td>
+                  <td
+                    className={`px-6 py-4 text-right font-bold ${
+                      item.type === "in" ? "text-green-600" : "text-red-600"
                     }`}
                   >
-                    {item.category.replace("_", " ")}
-                  </span>
-                </td>
-                <td className="px-6 py-4 font-medium text-gray-900">
-                  {item.description}
-                </td>
-                <td
-                  className={`px-6 py-4 text-right font-bold ${
-                    item.type === "in" ? "text-green-600" : "text-red-600"
-                  }`}
-                >
-                  {item.type === "in" ? "+" : "-"} {formatRupiah(item.amount)}
-                </td>
-              </tr>
-            ))}
-            {transactions.length === 0 && (
-              <tr>
-                <td colSpan="4" className="p-8 text-center text-gray-400">
-                  Belum ada data keuangan.
-                </td>
-              </tr>
-            )}
-          </tbody>
-        </table>
+                    {item.type === "in" ? "+" : "-"} {formatRupiah(item.amount)}
+                  </td>
+                </tr>
+              ))}
+              {transactions.length === 0 && (
+                <tr>
+                  <td colSpan="4" className="p-8 text-center text-gray-400">
+                    Belum ada data keuangan.
+                  </td>
+                </tr>
+              )}
+            </tbody>
+          </table>
+        </div>
       </div>
 
       {/* MODAL INPUT */}
       {isModalOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 backdrop-blur-sm">
-          <div className="bg-white rounded-3xl p-8 w-full max-w-md shadow-2xl animate-in fade-in zoom-in-95">
+          <div className="bg-white rounded-3xl p-6 md:p-8 w-full max-w-md shadow-2xl animate-in fade-in zoom-in-95 max-h-[90vh] overflow-y-auto">
             <h2 className="text-xl font-bold text-gray-900 mb-6">
               Catat Keuangan
             </h2>
@@ -221,9 +235,6 @@ export default function FinancePage() {
                     </option>
                   ) : (
                     <>
-                      <option value="operasional_toko">
-                        Biaya Operasional (Listrik, Wifi)
-                      </option>
                       <option value="tarik_modal">Tarik Modal Investor</option>
                       <option value="prive">Ambil Profit (Prive)</option>
                     </>
@@ -256,7 +267,7 @@ export default function FinancePage() {
                 <textarea
                   rows="2"
                   required
-                  placeholder="Contoh: Bayar tagihan IndiHome bulan Juli"
+                  placeholder=""
                   className="w-full p-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-gray-900 outline-none"
                   value={formData.description}
                   onChange={(e) =>

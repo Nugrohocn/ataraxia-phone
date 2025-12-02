@@ -3,6 +3,8 @@
 import { useState, useEffect } from "react";
 import { supabase } from "@/lib/supabaseClient";
 import { Save, AlertCircle, PieChart } from "lucide-react";
+// 1. Import Toast
+import { toast } from "sonner";
 
 export default function SettingsPage() {
   const [loading, setLoading] = useState(true);
@@ -21,7 +23,7 @@ export default function SettingsPage() {
         const { data, error } = await supabase
           .from("business_settings")
           .select("*")
-          .eq("id", 1) // Kita asumsikan ID 1 selalu ada
+          .eq("id", 1)
           .single();
 
         if (error) throw error;
@@ -34,6 +36,7 @@ export default function SettingsPage() {
         }
       } catch (error) {
         console.error("Error:", error.message);
+        toast.error("Gagal memuat pengaturan");
       } finally {
         setLoading(false);
       }
@@ -49,7 +52,7 @@ export default function SettingsPage() {
     if (value > 100) value = 100;
     if (value < 0) value = 0;
 
-    // Jika Superadmin diubah, Partner otomatis menyesuaikan
+    // Jika Investor diubah, Pelaksana otomatis menyesuaikan
     setShares({
       superadmin: value,
       partner: 100 - value,
@@ -60,6 +63,9 @@ export default function SettingsPage() {
   const handleSave = async (e) => {
     e.preventDefault();
     setSaving(true);
+
+    // 2. Tampilkan Toast Loading
+    const toastId = toast.loading("Menyimpan pengaturan...");
 
     try {
       const { error } = await supabase
@@ -72,19 +78,26 @@ export default function SettingsPage() {
         .eq("id", 1);
 
       if (error) throw error;
-      alert("Pengaturan bagi hasil berhasil disimpan!");
+
+      // 3. Update Toast jadi Sukses
+      toast.success("Pengaturan bagi hasil berhasil disimpan!", {
+        id: toastId,
+        description: `Investor: ${shares.superadmin}%, Pelaksana: ${shares.partner}%`,
+      });
     } catch (error) {
-      alert("Gagal menyimpan: " + error.message);
+      // 4. Update Toast jadi Gagal
+      toast.error("Gagal menyimpan: " + error.message, {
+        id: toastId,
+      });
     } finally {
       setSaving(false);
     }
   };
 
   if (loading)
-    return <div className="p-8 text-center">Loading settings...</div>;
-
-  // ... (Logic sama) ...
-  // Ganti RETURN (JSX) dengan ini:
+    return (
+      <div className="p-8 text-center text-gray-500">Loading settings...</div>
+    );
 
   return (
     <div className="max-w-2xl mx-auto space-y-8">
@@ -105,9 +118,9 @@ export default function SettingsPage() {
               Prinsip Bagi Hasil
             </h4>
             <p className="text-sm text-blue-700/80 mt-1 leading-relaxed">
-              Total persentase antara Superadmin (Investor) dan Partner
-              (Pelaksana) harus selalu berjumlah <strong>100%</strong>.
-              Perubahan akan berlaku untuk perhitungan profit selanjutnya.
+              Total persentase antara Investor dan Pelaksana harus selalu
+              berjumlah <strong>100%</strong>. Perubahan akan berlaku untuk
+              perhitungan profit selanjutnya.
             </p>
           </div>
         </div>
@@ -116,8 +129,8 @@ export default function SettingsPage() {
           {/* Visual Bar */}
           <div className="space-y-3">
             <div className="flex justify-between text-sm font-bold">
-              <span className="text-gray-900">Superadmin</span>
-              <span className="text-gray-500">Partner</span>
+              <span className="text-gray-900">Investor</span>
+              <span className="text-gray-500">Pelaksana</span>
             </div>
             <div className="h-6 w-full bg-gray-100 rounded-full overflow-hidden flex p-1">
               <div
@@ -133,7 +146,7 @@ export default function SettingsPage() {
           <div className="grid grid-cols-2 gap-8">
             <div className="space-y-2">
               <label className="text-xs font-bold text-gray-500 uppercase tracking-wider">
-                Superadmin
+                Investor
               </label>
               <div className="relative group">
                 <input
@@ -151,13 +164,13 @@ export default function SettingsPage() {
 
             <div className="space-y-2">
               <label className="text-xs font-bold text-gray-500 uppercase tracking-wider">
-                Partner
+                Pelaksana
               </label>
               <div className="relative">
                 <input
                   type="number"
                   value={shares.partner}
-                  disabled
+                  disabled // Partner otomatis dihitung
                   className="w-full p-4 border border-gray-100 bg-gray-50 rounded-2xl font-bold text-2xl text-gray-500 text-center cursor-not-allowed"
                 />
                 <span className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-300 font-bold">
