@@ -1,15 +1,15 @@
 "use client";
 
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import { supabase } from "@/lib/supabaseClient"; // Client Supabase kita
+import { supabase } from "@/lib/supabaseClient";
 import { Loader2 } from "lucide-react";
 import { toast } from "sonner";
 
-export default function AuthCallbackPage() {
+// 1. PISAHKAN LOGIKA UTAMA KE KOMPONEN INI
+function CallbackContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  // Cegah useEffect jalan 2x di React Strict Mode
   const processedRef = useRef(false);
 
   const next = searchParams.get("next") || "/dashboard";
@@ -19,9 +19,9 @@ export default function AuthCallbackPage() {
     processedRef.current = true;
 
     const handleAuth = async () => {
-      // 1. Cek apakah ada 'code' (Server Flow) di URL
       const code = searchParams.get("code");
 
+      // A. Cek Code (Server Flow - Email Link biasanya pakai ini)
       if (code) {
         const { error } = await supabase.auth.exchangeCodeForSession(code);
         if (!error) {
@@ -30,17 +30,14 @@ export default function AuthCallbackPage() {
         }
       }
 
-      // 2. Jika tidak ada code, cek apakah Supabase mendeteksi Session dari Hash (#)
-      // (Library Supabase otomatis membaca URL Hash)
+      // B. Cek Hash (Client Flow - Kadang Supabase kirim via hash #)
       const {
         data: { session },
-        error,
       } = await supabase.auth.getSession();
 
       if (session) {
         finishLogin();
       } else {
-        // Gagal total
         toast.error("Gagal verifikasi undangan.");
         router.replace("/login?error=VerificationFailed");
       }
@@ -49,7 +46,7 @@ export default function AuthCallbackPage() {
     const finishLogin = () => {
       // Refresh agar Middleware di server sadar kita sudah punya cookie
       router.refresh();
-      // Redirect ke halaman tujuan (misal: update-password)
+      // Redirect ke halaman tujuan
       router.replace(next);
     };
 
@@ -63,5 +60,21 @@ export default function AuthCallbackPage() {
         Memverifikasi Undangan...
       </p>
     </div>
+  );
+}
+
+// 2. KOMPONEN UTAMA (Hanya sebagai Wrapper / Bungkus)
+export default function AuthCallbackPage() {
+  return (
+    // Suspense wajib ada jika kita pakai useSearchParams di Next.js App Router saat Build
+    <Suspense
+      fallback={
+        <div className="flex h-screen w-full items-center justify-center">
+          Loading Auth...
+        </div>
+      }
+    >
+      <CallbackContent />
+    </Suspense>
   );
 }
