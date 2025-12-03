@@ -21,6 +21,8 @@ import {
 } from "recharts";
 import DashboardSkeleton from "@/components/ui/DashboardSkeleton";
 
+import { redirect } from 'next/navigation'
+
 export default function DashboardPage() {
   const [loading, setLoading] = useState(true);
   const [summary, setSummary] = useState({});
@@ -303,4 +305,11 @@ export default function DashboardPage() {
       </div>
     </div>
   );
+}
+
+
+
+export default function Home() {
+  // Langsung redirect ke dashboard
+  redirect('/dashboard')
 }
