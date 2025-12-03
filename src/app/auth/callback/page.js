@@ -1,12 +1,15 @@
 "use client";
 
+// 1. Tambahkan config ini agar halaman tidak di-build statis
+export const dynamic = "force-dynamic";
+
 import { useEffect, useRef, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { supabase } from "@/lib/supabaseClient";
 import { Loader2 } from "lucide-react";
 import { toast } from "sonner";
 
-// 1. PISAHKAN LOGIKA UTAMA KE KOMPONEN INI
+// 2. LOGIKA UTAMA (Tetap sama)
 function CallbackContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -21,7 +24,7 @@ function CallbackContent() {
     const handleAuth = async () => {
       const code = searchParams.get("code");
 
-      // A. Cek Code (Server Flow - Email Link biasanya pakai ini)
+      // A. Cek Code (Server Flow)
       if (code) {
         const { error } = await supabase.auth.exchangeCodeForSession(code);
         if (!error) {
@@ -30,7 +33,7 @@ function CallbackContent() {
         }
       }
 
-      // B. Cek Hash (Client Flow - Kadang Supabase kirim via hash #)
+      // B. Cek Hash (Client Flow)
       const {
         data: { session },
       } = await supabase.auth.getSession();
@@ -44,9 +47,7 @@ function CallbackContent() {
     };
 
     const finishLogin = () => {
-      // Refresh agar Middleware di server sadar kita sudah punya cookie
       router.refresh();
-      // Redirect ke halaman tujuan
       router.replace(next);
     };
 
@@ -63,10 +64,9 @@ function CallbackContent() {
   );
 }
 
-// 2. KOMPONEN UTAMA (Hanya sebagai Wrapper / Bungkus)
+// 3. WRAPPER UTAMA
 export default function AuthCallbackPage() {
   return (
-    // Suspense wajib ada jika kita pakai useSearchParams di Next.js App Router saat Build
     <Suspense
       fallback={
         <div className="flex h-screen w-full items-center justify-center">
