@@ -5,7 +5,7 @@ import { Toaster } from "sonner";
 const inter = Inter({ subsets: ["latin"] });
 
 export const metadata = {
-  title: "Nuka Phone Management",
+  title: "Ataraxia Phone Management",
   description: "Sistem Manajemen Stok & Kasir HP Bekas",
 };
 

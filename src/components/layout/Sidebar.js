@@ -90,12 +90,12 @@ export default function Sidebar({ isOpen, setIsOpen }) {
         {/* LOGO AREA */}
         <div className="flex h-24 items-center justify-between px-8">
           {/* Logo Image */}
-          <div className="relative h-12 w-48">
+          <div className="relative h-25 w-100">
             <Image
-              src="/image/ataraxia-logo.png"
+              src="/image/ataraxia.png"
               alt="Ataraxia Logo"
               fill
-              className="object-contain object-left"
+              className="object-contain object-center"
               priority
             />
           </div>
